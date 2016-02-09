@@ -4,10 +4,13 @@ namespace Poirot\Connection\Http;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Connection\AbstractConnection;
+use Poirot\Connection\Http\StreamFilter\ChunkTransferDecodeFilter;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Core\Traits\CloneTrait;
+use Poirot\Stream\Filter\PhpRegisteredFilter;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
+use Poirot\Stream\Streamable\SegmentWrapStream;
 use Poirot\Stream\StreamClient;
 
 /*
@@ -329,10 +332,18 @@ class HttpSocketConnection extends AbstractConnection
                 ## ! remain chunked
                 $buffer->write($chunkSize.$delim);
 
-                if ($chunkSize === $delim)
+                if ($chunkSize === $delim || $chunkSize === '')
                     continue;
 
                 ### read this chunk of data
+/*              $data = ($stream->read(hexdec($chunkSize)));
+                $body = new Streamable\TemporaryStream($data);
+                $body->getResource()->appendFilter(new PhpRegisteredFilter('zlib.inflate'), STREAM_FILTER_READ);
+                ### skip the first 10 bytes for zlib
+                $body = new SegmentWrapStream($body, -1, 10);
+                echo $body->read();
+
+                kd();*/
                 $stream->pipeTo($buffer, hexdec($chunkSize));
 
             } while ($chunkSize !== "0");
