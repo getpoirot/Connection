@@ -1,5 +1,5 @@
 <?php
-namespace Poirot\Connection;
+namespace Poirot\Connection\Interfaces;
 
 use Poirot\Stream\Streamable;
 
