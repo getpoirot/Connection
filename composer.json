@@ -1,0 +1,22 @@
+{
+    "name": "poirot/connection"
+    , "description": "PHP Http Client."
+    , "type"       : "library"
+    , "authors": [
+        {
+            "name": "Payam Naderi"
+            , "email": "naderi.payam@gmail.com"
+            , "role": "Developer"
+        }
+    ],
+    "require": {
+        "poirot/core": "dev-master"
+        , "poirot/stream": "dev-master"
+    },
+    "target-dir": "Poirot/Connection"
+    , "autoload"  : {
+        "psr-0": {
+            "Poirot\\Connection": "."
+        }
+    }
+}
