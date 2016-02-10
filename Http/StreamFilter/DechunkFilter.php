@@ -13,7 +13,7 @@ use Poirot\Stream\Filter\AbstractFilter;
  * @license BSD
  * @author Francis Avila
  */
-class ChunkTransferDecodeFilter extends AbstractFilter
+class DechunkFilter extends AbstractFilter
 {
     /** @var int bytes remaining in the current chunk */
     protected $chunkremaining = 0;
