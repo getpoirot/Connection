@@ -2,6 +2,8 @@
 namespace Poirot\Connection\Http\StreamFilter;
 
 use Poirot\Stream\Filter\AbstractFilter;
+use Poirot\Stream\Filter\PhpRegisteredFilter;
+use Poirot\Stream\SFilterManager;
 
 /**
  * A stream filter for removing the 'chunking' of a 'Transfer-Encoding: chunked'
@@ -17,6 +19,18 @@ class DechunkFilter extends AbstractFilter
 {
     /** @var int bytes remaining in the current chunk */
     protected $chunkremaining = 0;
+
+    /**
+     * Determine Using Internal PHP Dechunk filter if available
+     * @return DechunkFilter|PhpRegisteredFilter
+     */
+    static function factory()
+    {
+        if (in_array('dechunk', SFilterManager::listFilters()))
+            return new PhpRegisteredFilter('dechunk');
+
+        return new static;
+    }
 
     /**
      * Filter Stream Through Buckets
