@@ -71,6 +71,12 @@ abstract class AbstractConnection
                 'Expression not set, nothing to do.'
             );
 
+        # check connection
+        if (!$this->isConnected())
+            throw new \RuntimeException(
+                'Connection not connected yet, connection must get connected by calling getConnect() method.'
+            );
+
         # ! # remember last request
         $this->request($expr);
         $result = $this->doSend();

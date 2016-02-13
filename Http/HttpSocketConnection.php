@@ -152,7 +152,6 @@ class HttpSocketConnection extends AbstractConnection
     }
 
     /**
-     * TODO make request and response are too slow
      * Send Expression On the wire
      *
      * - be aware if you pass streamable it will continue from current
@@ -165,15 +164,8 @@ class HttpSocketConnection extends AbstractConnection
      */
     final function doSend()
     {
-//        $start = microtime(true);
-
         # prepare new request
         $this->lastReceive = null;
-
-        # get connect if not
-        if (!$this->isConnected())
-            throw new ConnectException;
-
 
         # write stream
         try
@@ -201,8 +193,6 @@ class HttpSocketConnection extends AbstractConnection
                 , $this->inOptions()->getServerUrl()
             ), 0, 1, __FILE__, __LINE__, $e);
         }
-
-//        printf("get connect: %f<br/>", microtime(true) - $start);
 
         $this->lastReceive = $response;
         return $response;
