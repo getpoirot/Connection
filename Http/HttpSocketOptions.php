@@ -1,9 +1,9 @@
 <?php
 namespace Poirot\Connection\Http;
 
-use Poirot\Std\AbstractOptions;
 use Poirot\Std\Interfaces\Struct\iStructDataConveyor;
-use Poirot\Logger\Context\AbstractContext;
+use Poirot\Std\Struct\AbstractOptions;
+use Poirot\Stream\Context\AbstractContext;
 use Poirot\Stream\Context\Http\HttpContext;
 use Poirot\Stream\Context\Http\HttpsContext;
 use Poirot\Stream\Context\Socket\SocketContext;

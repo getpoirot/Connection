@@ -4,21 +4,21 @@ namespace Poirot\Connection;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Connection\Interfaces\iConnection;
-use Poirot\Std\AbstractOptions;
 use Poirot\Std\Interfaces\Struct\iStructDataConveyor;
-use Poirot\Std\Interfaces\iOptionsProvider;
-use Poirot\Std\Interfaces\iPoirotOptions;
-use Poirot\Std\OpenOptions;
+use Poirot\Std\Interfaces\ipOptionsProvider;
+use Poirot\Std\Interfaces\ipOptions;
+use Poirot\Std\Struct\AbstractOptions;
+use Poirot\Std\Struct\OpenOptions;
 use Poirot\Std\Traits\CloneTrait;
 use Poirot\Stream\Streamable;
 
 abstract class AbstractConnection
     implements iConnection
-    , iOptionsProvider
+    , ipOptionsProvider
 {
     use CloneTrait;
 
-    /** @var iPoirotOptions */
+    /** @var ipOptions */
     protected $options;
     /** @var mixed Expression to Send */
     protected $expr;

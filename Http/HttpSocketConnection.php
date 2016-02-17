@@ -4,13 +4,10 @@ namespace Poirot\Connection\Http;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Connection\AbstractConnection;
-use Poirot\Connection\Http\StreamFilter\DechunkFilter;
 use Poirot\Std\Interfaces\Struct\iStructDataConveyor;
 use Poirot\Std\Traits\CloneTrait;
-use Poirot\Stream\Filter\PhpRegisteredFilter;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
-use Poirot\Stream\Streamable\SegmentWrapStream;
 use Poirot\Stream\StreamClient;
 
 /*
