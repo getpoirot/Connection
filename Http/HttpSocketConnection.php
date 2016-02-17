@@ -5,8 +5,8 @@ use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Connection\AbstractConnection;
 use Poirot\Connection\Http\StreamFilter\DechunkFilter;
-use Poirot\Core\Interfaces\iDataSetConveyor;
-use Poirot\Core\Traits\CloneTrait;
+use Poirot\Std\Interfaces\Struct\iStructDataConveyor;
+use Poirot\Std\Traits\CloneTrait;
 use Poirot\Stream\Filter\PhpRegisteredFilter;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
@@ -61,11 +61,11 @@ class HttpSocketConnection extends AbstractConnection
      * - pass transporter options on construct
      *
      * @param null|string|$options        $serverUri_options
-     * @param array|iDataSetConveyor|null $options           Transporter Options
+     * @param array|iStructDataConveyor|null $options           Transporter Options
      */
     function __construct($serverUri_options = null, $options = null)
     {
-        if (is_array($serverUri_options) || $serverUri_options instanceof iDataSetConveyor)
+        if (is_array($serverUri_options) || $serverUri_options instanceof iStructDataConveyor)
             $options = $serverUri_options;
         elseif(is_string($serverUri_options))
             $this->inOptions()->setServerUrl($serverUri_options);
@@ -137,7 +137,7 @@ class HttpSocketConnection extends AbstractConnection
         $serverUrl = $this->__unparse_url($parsedServerUrl);
 
         $stream = new StreamClient(
-            \Poirot\Core\array_merge(
+            \Poirot\Std\array_merge(
                 $this->inOptions()->toArray()
                 , ['socket_uri' => $serverUrl]
             )
@@ -182,7 +182,7 @@ class HttpSocketConnection extends AbstractConnection
             if (!$expr instanceof iStreamable)
                 throw new \InvalidArgumentException(sprintf(
                     'Http Expression must instance of iHttpRequest, RequestInterface or string. given: "%s".'
-                    , \Poirot\Core\flatten($expr)
+                    , \Poirot\Std\flatten($expr)
                 ));
 
             $response = $this->__handleReqRes($expr);

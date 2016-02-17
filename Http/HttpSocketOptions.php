@@ -1,8 +1,8 @@
 <?php
 namespace Poirot\Connection\Http;
 
-use Poirot\Core\AbstractOptions;
-use Poirot\Core\Interfaces\iDataSetConveyor;
+use Poirot\Std\AbstractOptions;
+use Poirot\Std\Interfaces\Struct\iStructDataConveyor;
 use Poirot\Logger\Context\AbstractContext;
 use Poirot\Stream\Context\Http\HttpContext;
 use Poirot\Stream\Context\Http\HttpsContext;
@@ -40,7 +40,7 @@ class HttpSocketOptions extends AbstractOptions
     }
 
     /**
-     * @param array|iDataSetConveyor|AbstractContext $context
+     * @param array|iStructDataConveyor|AbstractContext $context
      * @return $this
      */
     public function setContext($context)

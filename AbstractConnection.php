@@ -4,12 +4,12 @@ namespace Poirot\Connection;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Connection\Interfaces\iConnection;
-use Poirot\Core\AbstractOptions;
-use Poirot\Core\Interfaces\iDataSetConveyor;
-use Poirot\Core\Interfaces\iOptionsProvider;
-use Poirot\Core\Interfaces\iPoirotOptions;
-use Poirot\Core\OpenOptions;
-use Poirot\Core\Traits\CloneTrait;
+use Poirot\Std\AbstractOptions;
+use Poirot\Std\Interfaces\Struct\iStructDataConveyor;
+use Poirot\Std\Interfaces\iOptionsProvider;
+use Poirot\Std\Interfaces\iPoirotOptions;
+use Poirot\Std\OpenOptions;
+use Poirot\Std\Traits\CloneTrait;
 use Poirot\Stream\Streamable;
 
 abstract class AbstractConnection
@@ -28,7 +28,7 @@ abstract class AbstractConnection
      *
      * - pass transporter options on construct
      *
-     * @param array|iDataSetConveyor $options Transporter Options
+     * @param array|iStructDataConveyor $options Transporter Options
      */
     function __construct($options = null)
     {
