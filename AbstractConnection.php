@@ -171,6 +171,7 @@ abstract class AbstractConnection
      */
     static function newOptsData($builder = null)
     {
+        ## using interface method instead of construct pass
         return (new OpenOptionsData)->from($builder);
     }
 }

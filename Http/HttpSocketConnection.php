@@ -135,12 +135,13 @@ class HttpSocketConnection extends AbstractConnection
 
         $stream = new StreamClient(
             \Poirot\Std\array_merge(
-                $this->optsData()->toArray()
+                \Poirot\Std\iterator_to_array($this->optsData())
                 , ['socket_uri' => $serverUrl]
             )
         );
 
         ### options
+        // TODO watch getTimeout
         $stream->setTimeout($this->optsData()->getTimeout());
         $stream->setPersist($this->optsData()->isPersist());
 
@@ -387,7 +388,7 @@ finalize:
      */
     static function newOptsData($builder = null)
     {
-        return new HttpSocketOptionsData($builder);
+        return (new HttpSocketOptionsData)->from($builder);
     }
 
     // util:
