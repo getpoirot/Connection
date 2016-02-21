@@ -4,7 +4,7 @@ namespace Poirot\Connection\Http;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Connection\AbstractConnection;
-use Poirot\Std\Interfaces\Struct\iStructDataConveyor;
+use Poirot\Std\Interfaces\Struct\iDataStruct;
 use Poirot\Std\Traits\CloneTrait;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
@@ -42,7 +42,7 @@ class HttpSocketConnection extends AbstractConnection
 
     /**
      * the options will not changed when connected
-     * @var HttpSocketOptions
+     * @var HttpSocketOptionsData
      */
     protected $connected_options;
 
@@ -58,14 +58,14 @@ class HttpSocketConnection extends AbstractConnection
      * - pass transporter options on construct
      *
      * @param null|string|$options        $serverUri_options
-     * @param array|iStructDataConveyor|null $options           Transporter Options
+     * @param array|iDataStruct|null $options           Transporter Options
      */
     function __construct($serverUri_options = null, $options = null)
     {
-        if (is_array($serverUri_options) || $serverUri_options instanceof iStructDataConveyor)
+        if (is_array($serverUri_options) || $serverUri_options instanceof iDataStruct)
             $options = $serverUri_options;
         elseif(is_string($serverUri_options))
-            $this->inOptions()->setServerUrl($serverUri_options);
+            $this->optsData()->setServerUrl($serverUri_options);
 
         parent::__construct($options);
     }
@@ -90,11 +90,11 @@ class HttpSocketConnection extends AbstractConnection
         # apply options to resource
 
         ## options will not take an affect after connect
-        $this->connected_options = clone $this->inOptions();
+        $this->connected_options = clone $this->optsData();
 
         ## determine protocol
 
-        $serverUrl = $this->inOptions()->getServerUrl();
+        $serverUrl = $this->optsData()->getServerUrl();
 
         if (!$serverUrl)
             throw new \RuntimeException('Server Url is Mandatory For Connect.');
@@ -135,14 +135,14 @@ class HttpSocketConnection extends AbstractConnection
 
         $stream = new StreamClient(
             \Poirot\Std\array_merge(
-                $this->inOptions()->toArray()
+                $this->optsData()->toArray()
                 , ['socket_uri' => $serverUrl]
             )
         );
 
         ### options
-        $stream->setTimeout($this->inOptions()->getTimeout());
-        $stream->setPersist($this->inOptions()->isPersist());
+        $stream->setTimeout($this->optsData()->getTimeout());
+        $stream->setPersist($this->optsData()->isPersist());
 
         $resource = $stream->getConnect();
         return new Streamable($resource);
@@ -187,7 +187,7 @@ class HttpSocketConnection extends AbstractConnection
         catch (\Exception $e) {
             throw new ApiCallException(sprintf(
                 'Request Call Error When Send To Server (%s)'
-                , $this->inOptions()->getServerUrl()
+                , $this->optsData()->getServerUrl()
             ), 0, 1, __FILE__, __LINE__, $e);
         }
 
@@ -276,7 +276,7 @@ class HttpSocketConnection extends AbstractConnection
         $streamMeta = $stream->getResource()->meta();
         if ($streamMeta && $streamMeta->isTimedOut())
             throw new \RuntimeException(
-                "Read timed out after {$this->inOptions()->getTimeout()} seconds."
+                "Read timed out after {$this->optsData()->getTimeout()} seconds."
             );
 
         # read headers:
@@ -370,24 +370,24 @@ finalize:
 
     /**
      * @override just for ide completion
-     * @return HttpSocketOptions
+     * @return HttpSocketOptionsData
      */
-    function inOptions()
+    function optsData()
     {
         if ($this->isConnected())
             ## the options will not changed when connected
             return $this->connected_options;
 
-        return parent::inOptions();
+        return parent::optsData();
     }
 
     /**
      * @override
-     * @return HttpSocketOptions
+     * @return HttpSocketOptionsData
      */
-    static function newOptions($builder = null)
+    static function newOptsData($builder = null)
     {
-        return new HttpSocketOptions($builder);
+        return new HttpSocketOptionsData($builder);
     }
 
     // util:

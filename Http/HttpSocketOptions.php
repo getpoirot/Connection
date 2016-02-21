@@ -1,15 +1,15 @@
 <?php
 namespace Poirot\Connection\Http;
 
-use Poirot\Std\Interfaces\Struct\iStructDataConveyor;
-use Poirot\Std\Struct\AbstractOptions;
+use Poirot\Std\Interfaces\Struct\iDataStruct;
+use Poirot\Std\Struct\AbstractOptionsData;
 use Poirot\Stream\Context\AbstractContext;
 use Poirot\Stream\Context\Http\HttpContext;
 use Poirot\Stream\Context\Http\HttpsContext;
 use Poirot\Stream\Context\Socket\SocketContext;
 use Poirot\Stream\StreamClientOptionsTrait;
 
-class HttpSocketOptions extends AbstractOptions
+class HttpSocketOptionsData extends AbstractOptionsData
 {
     use StreamClientOptionsTrait {
         StreamClientOptionsTrait::setSocketUri as protected __hide__setSocketUri;
@@ -40,7 +40,7 @@ class HttpSocketOptions extends AbstractOptions
     }
 
     /**
-     * @param array|iStructDataConveyor|AbstractContext $context
+     * @param array|iDataStruct|AbstractContext $context
      * @return $this
      */
     public function setContext($context)

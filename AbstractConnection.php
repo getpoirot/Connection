@@ -4,11 +4,10 @@ namespace Poirot\Connection;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Connection\Interfaces\iConnection;
-use Poirot\Std\Interfaces\Struct\iStructDataConveyor;
+use Poirot\Std\Interfaces\Struct\iDataStruct;
 use Poirot\Std\Interfaces\ipOptionsProvider;
-use Poirot\Std\Interfaces\ipOptions;
-use Poirot\Std\Struct\AbstractOptions;
-use Poirot\Std\Struct\OpenOptions;
+use Poirot\Std\Interfaces\Struct\iOptionsData;
+use Poirot\Std\Struct\OpenOptionsData;
 use Poirot\Std\Traits\CloneTrait;
 use Poirot\Stream\Streamable;
 
@@ -18,7 +17,6 @@ abstract class AbstractConnection
 {
     use CloneTrait;
 
-    /** @var ipOptions */
     protected $options;
     /** @var mixed Expression to Send */
     protected $expr;
@@ -28,14 +26,13 @@ abstract class AbstractConnection
      *
      * - pass transporter options on construct
      *
-     * @param array|iStructDataConveyor $options Transporter Options
+     * @param array|iDataStruct $options Transporter Options
      */
     function __construct($options = null)
     {
-        if ($options === null)
-            return;
-
-        $this->inOptions()->from($options);
+        if ($options !== null) {
+            $this->optsData()->from($options);
+        }
     }
 
     /**
@@ -146,12 +143,12 @@ abstract class AbstractConnection
     // ...
 
     /**
-     * @return AbstractOptions
+     * @return iOptionsData
      */
-    function inOptions()
+    function optsData()
     {
         if (!$this->options)
-            $this->options = static::newOptions();
+            $this->options = static::newOptsData();
 
         return $this->options;
     }
@@ -170,10 +167,10 @@ abstract class AbstractConnection
      *
      * @param null|mixed $builder Builder Options as Constructor
      *
-     * @return AbstractOptions
+     * @return iOptionsData
      */
-    static function newOptions($builder = null)
+    static function newOptsData($builder = null)
     {
-        return new OpenOptions($builder);
+        return (new OpenOptionsData)->from($builder);
     }
 }
