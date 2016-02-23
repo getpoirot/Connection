@@ -8,7 +8,7 @@ use Poirot\Stream\Context\HttpContext;
 use Poirot\Stream\Context\SocketContext;
 use Poirot\Stream\StreamClientOptionsTrait;
 
-class HttpSocketOptionsData extends AbstractOptionsData
+class HttpSocketOptions extends AbstractOptionsData
 {
     use StreamClientOptionsTrait {
         ## these methods not available for Http Connection

@@ -42,7 +42,7 @@ class HttpSocketConnection extends AbstractConnection
 
     /**
      * the options will not changed when connected
-     * @var HttpSocketOptionsData
+     * @var HttpSocketOptions
      */
     protected $connected_options;
 
@@ -371,7 +371,7 @@ finalize:
 
     /**
      * @override just for ide completion
-     * @return HttpSocketOptionsData
+     * @return HttpSocketOptions
      */
     function optsData()
     {
@@ -384,11 +384,11 @@ finalize:
 
     /**
      * @override
-     * @return HttpSocketOptionsData
+     * @return HttpSocketOptions
      */
     static function newOptsData($builder = null)
     {
-        return (new HttpSocketOptionsData)->from($builder);
+        return (new HttpSocketOptions)->from($builder);
     }
 
     // util:
