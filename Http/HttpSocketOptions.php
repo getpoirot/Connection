@@ -4,9 +4,8 @@ namespace Poirot\Connection\Http;
 use Poirot\Std\Interfaces\Struct\iDataStruct;
 use Poirot\Std\Struct\AbstractOptionsData;
 use Poirot\Stream\Context\AbstractContext;
-use Poirot\Stream\Context\Http\HttpContext;
-use Poirot\Stream\Context\Http\HttpsContext;
-use Poirot\Stream\Context\Socket\SocketContext;
+use Poirot\Stream\Context\HttpContext;
+use Poirot\Stream\Context\SocketContext;
 use Poirot\Stream\StreamClientOptionsTrait;
 
 class HttpSocketOptionsData extends AbstractOptionsData
@@ -58,7 +57,7 @@ class HttpSocketOptionsData extends AbstractOptionsData
         if (!$this->context) {
             $this->context = new SocketContext;
             $this->context->bindWith(new HttpContext);
-            $this->context->bindWith(new HttpsContext);
+//            $this->context->bindWith(new HttpsContext);
         }
 
         return $this->context;
