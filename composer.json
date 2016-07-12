@@ -9,10 +9,6 @@
             , "role": "Developer"
         }
     ],
-    "require": {
-        "poirot/std": "dev-master"
-        , "poirot/stream": "dev-master"
-    },
     "target-dir": "Poirot/Connection"
     , "autoload"  : {
         "psr-0": {
