@@ -3,7 +3,7 @@ namespace Poirot\Connection\Http;
 
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
-use Poirot\Connection\AbstractConnection;
+use Poirot\Connection\aConnection;
 use Poirot\Std\Interfaces\Struct\iDataStruct;
 use Poirot\Std\Traits\CloneTrait;
 use Poirot\Stream\Interfaces\iStreamable;
@@ -33,7 +33,7 @@ $body = new SegmentWrapStream($body, -1, 10);
 echo $body->read();
 */
 
-class HttpSocketConnection extends AbstractConnection
+class HttpSocketConnection extends aConnection
 {
     use CloneTrait;
 
@@ -169,7 +169,7 @@ class HttpSocketConnection extends AbstractConnection
         try
         {
             ## prepare expression before send
-            $expr = $this->getRequest();
+            $expr = $this->getLastRequest();
             $expr = $this->onBeforeSendPrepareExpression($expr);
             if (is_object($expr) && !$expr instanceof iStreamable)
                 $expr = (string) $expr;

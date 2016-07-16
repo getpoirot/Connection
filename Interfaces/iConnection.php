@@ -29,7 +29,7 @@ interface iConnection
      *
      * @return null|mixed
      */
-    function getRequest();
+    function getLastRequest();
 
     /**
      * Send Expression To Server

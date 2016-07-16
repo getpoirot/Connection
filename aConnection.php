@@ -4,19 +4,15 @@ namespace Poirot\Connection;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Connection\Interfaces\iConnection;
-use Poirot\Std\Interfaces\Struct\iDataStruct;
-use Poirot\Std\Interfaces\ipOptionsProvider;
-use Poirot\Std\Interfaces\Struct\iOptionsData;
-use Poirot\Std\Struct\OpenOptionsData;
-use Poirot\Std\Traits\CloneTrait;
+use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
+use Poirot\Std\Interfaces\Struct\iDataOptions;
+use Poirot\Std\Struct\DataOptionsOpen;
 use Poirot\Stream\Streamable;
 
-abstract class AbstractConnection
+abstract class aConnection
     implements iConnection
     , ipOptionsProvider
 {
-    use CloneTrait;
-
     protected $options;
     /** @var mixed Expression to Send */
     protected $expr;
@@ -26,13 +22,12 @@ abstract class AbstractConnection
      *
      * - pass transporter options on construct
      *
-     * @param array|iDataStruct $options Transporter Options
+     * @param array|\Traversable $options Transporter Options
      */
     function __construct($options = null)
     {
-        if ($options !== null) {
-            $this->optsData()->from($options);
-        }
+        if ($options !== null)
+            $this->optsData()->import($options);
     }
 
     /**
@@ -61,7 +56,7 @@ abstract class AbstractConnection
     final function send($expr = null)
     {
         if ($expr === null)
-            $expr = $this->getRequest();
+            $expr = $this->getLastRequest();
 
         if ($expr === null)
             throw new \InvalidArgumentException(
@@ -134,7 +129,7 @@ abstract class AbstractConnection
      *
      * @return null|mixed
      */
-    function getRequest()
+    function getLastRequest()
     {
         return $this->expr;
     }
@@ -143,7 +138,7 @@ abstract class AbstractConnection
     // ...
 
     /**
-     * @return iOptionsData
+     * @return iDataOptions
      */
     function optsData()
     {
@@ -167,11 +162,14 @@ abstract class AbstractConnection
      *
      * @param null|mixed $builder Builder Options as Constructor
      *
-     * @return iOptionsData
+     * @return DataOptionsOpen|iDataOptions
      */
     static function newOptsData($builder = null)
     {
-        ## using interface method instead of construct pass
-        return (new OpenOptionsData)->from($builder);
+        $options = new DataOptionsOpen;
+        if ($builder !== null)
+            $options->import($builder);
+
+        return $options;
     }
 }
