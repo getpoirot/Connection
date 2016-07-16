@@ -1,9 +1,9 @@
 <?php
 namespace Poirot\Connection\Http\StreamFilter;
 
-use Poirot\Stream\Filter\AbstractFilter;
-use Poirot\Stream\Filter\PhpRegisteredFilter;
-use Poirot\Stream\SFilterManager;
+use Poirot\Stream\Filter\aFilterStreamCustom;
+use Poirot\Stream\Filter\FilterStreamStreamPhpBuiltin;
+use Poirot\Stream\Filter\RegistryOfFilterStream;
 
 /**
  * A stream filter for removing the 'chunking' of a 'Transfer-Encoding: chunked'
@@ -15,19 +15,20 @@ use Poirot\Stream\SFilterManager;
  * @license BSD
  * @author Francis Avila
  */
-class DechunkFilter extends AbstractFilter
+class DechunkFilter 
+    extends aFilterStreamCustom
 {
     /** @var int bytes remaining in the current chunk */
     protected $chunkremaining = 0;
 
     /**
      * Determine Using Internal PHP Dechunk filter if available
-     * @return DechunkFilter|PhpRegisteredFilter
+     * @return DechunkFilter|FilterStreamStreamPhpBuiltin
      */
     static function factory()
     {
-        if (in_array('dechunk', SFilterManager::listFilters()))
-            return new PhpRegisteredFilter('dechunk');
+        if (in_array('dechunk', RegistryOfFilterStream::listFilters()))
+            return new FilterStreamStreamPhpBuiltin('dechunk');
 
         return new static;
     }

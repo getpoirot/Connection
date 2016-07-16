@@ -1,11 +1,8 @@
 <?php
 namespace Poirot\Connection\Http;
 
-use Poirot\ApiClient\Exception\ApiCallException;
-use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Connection\aConnection;
-use Poirot\Std\Interfaces\Struct\iDataStruct;
-use Poirot\Std\Traits\CloneTrait;
+use Poirot\Connection\Exception\ApiCallException;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
 use Poirot\Stream\StreamClient;
@@ -33,16 +30,15 @@ $body = new SegmentWrapStream($body, -1, 10);
 echo $body->read();
 */
 
-class HttpSocketConnection extends aConnection
+class ConnectionHttpSocket 
+    extends aConnection
 {
-    use CloneTrait;
-
     /** @var Streamable When Connected */
     protected $streamable;
 
     /**
      * the options will not changed when connected
-     * @var HttpSocketOptions
+     * @var OptionsHttpSocket
      */
     protected $connected_options;
 
@@ -57,12 +53,12 @@ class HttpSocketConnection extends aConnection
      *
      * - pass transporter options on construct
      *
-     * @param null|string|$options        $serverUri_options
-     * @param array|iDataStruct|null $options           Transporter Options
+     * @param null|string|$options    $serverUri_options
+     * @param array|\Traversable|null $options           Transporter Options
      */
     function __construct($serverUri_options = null, $options = null)
     {
-        if (is_array($serverUri_options) || $serverUri_options instanceof iDataStruct)
+        if (is_array($serverUri_options) || $serverUri_options instanceof \Traversable)
             $options = $serverUri_options;
         elseif(is_string($serverUri_options))
             $this->optsData()->setServerUrl($serverUri_options);
@@ -133,12 +129,8 @@ class HttpSocketConnection extends aConnection
         (isset($parsedServerUrl['port'])) ?: $parsedServerUrl['port'] = 80;
         $serverUrl = $this->__unparse_url($parsedServerUrl);
 
-        $stream = new StreamClient(
-            \Poirot\Std\array_merge(
-                \Poirot\Std\iterator_to_array($this->optsData())
-                , ['socket_uri' => $serverUrl]
-            )
-        );
+        $stream = new StreamClient($serverUrl);
+        $stream->with($this->optsData());
 
         ### options
         // TODO watch getTimeout
@@ -157,7 +149,7 @@ class HttpSocketConnection extends aConnection
      *
      * !! get expression from getRequest()
      *
-     * @throws ApiCallException|ConnectException
+     * @throws ApiCallException
      * @return string Response
      */
     final function doSend()
@@ -174,8 +166,10 @@ class HttpSocketConnection extends aConnection
             if (is_object($expr) && !$expr instanceof iStreamable)
                 $expr = (string) $expr;
 
-            if (is_string($expr))
-                $expr = (new Streamable\TemporaryStream($expr))->rewind();
+            if (is_string($expr)) {
+                $tStream = new Streamable\STemporary($expr);
+                $expr    = $tStream->rewind();
+            }
 
             if (!$expr instanceof iStreamable)
                 throw new \InvalidArgumentException(sprintf(
@@ -229,7 +223,7 @@ class HttpSocketConnection extends aConnection
      */
     function onResponseReceivedComplete($responseHeaders, $body)
     {
-        return (object) ['header' => $responseHeaders, 'body' => $body];
+        return (object) array('header' => $responseHeaders, 'body' => $body);
     }
 
     /**
@@ -274,7 +268,7 @@ class HttpSocketConnection extends aConnection
 
         $stream = $this->streamable;
 
-        $streamMeta = $stream->getResource()->meta();
+        $streamMeta = $stream->resource()->meta();
         if ($streamMeta && $streamMeta->isTimedOut())
             throw new \RuntimeException(
                 "Read timed out after {$this->optsData()->getTimeout()} seconds."
@@ -349,7 +343,7 @@ finalize:
      */
     function isConnected()
     {
-        return ($this->streamable !== null && $this->streamable->getResource()->isAlive());
+        return ($this->streamable !== null && $this->streamable->resource()->isAlive());
     }
 
     /**
@@ -361,7 +355,7 @@ finalize:
         if (!$this->isConnected())
             return;
 
-        $this->streamable->getResource()->close();
+        $this->streamable->resource()->close();
         $this->streamable = null;
         $this->connected_options = null;
     }
@@ -371,7 +365,7 @@ finalize:
 
     /**
      * @override just for ide completion
-     * @return HttpSocketOptions
+     * @return OptionsHttpSocket
      */
     function optsData()
     {
@@ -384,11 +378,15 @@ finalize:
 
     /**
      * @override
-     * @return HttpSocketOptions
+     * @return OptionsHttpSocket
      */
     static function newOptsData($builder = null)
     {
-        return (new HttpSocketOptions)->from($builder);
+        $options = new OptionsHttpSocket;
+        if ($builder !== null)
+            $options->import($builder);
+        
+        return $options; 
     }
 
     // util:
@@ -407,7 +405,7 @@ finalize:
 
         $lines = $lines[0];
 
-        $headers = [];
+        $headers = array();
         foreach ($lines as $line) {
             if (preg_match('/^(?P<label>[^()><@,;:\"\\/\[\]?=}{ \t]+):(?P<value>.*)$/', $line, $matches))
                 $headers[$matches['label']] = trim($matches['value']);
@@ -451,10 +449,10 @@ finalize:
     }
 
     /**
-     * @return Streamable\TemporaryStream
+     * @return Streamable\STemporary
      */
     protected static function _newBufferStream()
     {
-        return new Streamable\TemporaryStream();
+        return new Streamable\STemporary();
     }
 }

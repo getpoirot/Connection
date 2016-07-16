@@ -11,6 +11,7 @@
     ],
     "require": {
       "poirot/std": "dev-devel"
+      , "poirot/stream": "dev-devel"
     },
     "target-dir": "Poirot/Connection"
     , "autoload"  : {
@@ -20,5 +21,6 @@
     }
     ,"repositories": [
         { "type": "git" ,"url": "https://github.com/phPoirot/Std.git" }
+       ,{ "type": "git" ,"url": "https://github.com/phPoirot/Stream.git" }
     ]
 }
