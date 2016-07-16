@@ -2,6 +2,7 @@
 namespace Poirot\Connection\Interfaces;
 
 use Poirot\Stream\Streamable;
+use Psr\Http\Message\StreamInterface;
 
 interface iConnection
 {
@@ -57,7 +58,7 @@ interface iConnection
      * - return null if request not sent
      *
      * @throws \Exception No Transporter established
-     * @return null|string|Streamable
+     * @return null|string|StreamInterface
      */
     function receive();
 
