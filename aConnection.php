@@ -1,13 +1,13 @@
 <?php
 namespace Poirot\Connection;
 
-use Poirot\ApiClient\Exception\ApiCallException;
-use Poirot\ApiClient\Exception\ConnectException;
+use Poirot\Connection\Exception\ApiCallException;
+use Poirot\Connection\Exception\ConnectException;
 use Poirot\Connection\Interfaces\iConnection;
 use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
 use Poirot\Std\Interfaces\Struct\iDataOptions;
 use Poirot\Std\Struct\DataOptionsOpen;
-use Poirot\Stream\Streamable;
+use Psr\Http\Message\StreamInterface;
 
 abstract class aConnection
     implements iConnection
@@ -50,7 +50,7 @@ abstract class aConnection
      *
      * @param mixed $expr Expression
      *
-     * @throws ApiCallException|ConnectException
+     * @throws ApiCallException
      * @return mixed Prepared Server Response
      */
     final function send($expr = null)
@@ -80,7 +80,7 @@ abstract class aConnection
      *
      * !! get expression from getRequest()
      *
-     * @throws ApiCallException|ConnectException
+     * @throws ApiCallException
      * @return mixed Response
      */
     abstract function doSend();
@@ -93,7 +93,7 @@ abstract class aConnection
      * - return null if request not sent
      *
      * @throws \Exception No Transporter established
-     * @return null|string|Streamable
+     * @return null|string|StreamInterface
      */
     abstract function receive();
 

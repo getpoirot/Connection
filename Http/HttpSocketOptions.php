@@ -1,13 +1,6 @@
 <?php
 namespace Poirot\Connection\Http;
 
-use Poirot\Std\Interfaces\Struct\iDataStruct;
-use Poirot\Std\Struct\AbstractOptionsData;
-use Poirot\Stream\Context\AbstractContext;
-use Poirot\Stream\Context\HttpContext;
-use Poirot\Stream\Context\SocketContext;
-use Poirot\Stream\StreamClientOptionsTrait;
-
 class HttpSocketOptions extends AbstractOptionsData
 {
     use StreamClientOptionsTrait {

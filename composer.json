@@ -9,10 +9,16 @@
             , "role": "Developer"
         }
     ],
+    "require": {
+      "poirot/std": "dev-devel"
+    },
     "target-dir": "Poirot/Connection"
     , "autoload"  : {
         "psr-0": {
             "Poirot\\Connection": "."
         }
     }
+    ,"repositories": [
+        { "type": "git" ,"url": "https://github.com/phPoirot/Std.git" }
+    ]
 }
