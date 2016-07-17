@@ -61,7 +61,7 @@ class ConnectionHttpSocket
         if (is_array($serverUri_options) || $serverUri_options instanceof \Traversable)
             $options = $serverUri_options;
         elseif(is_string($serverUri_options))
-            $this->optsData()->setServerUrl($serverUri_options);
+            $this->optsData()->setServerAddress($serverUri_options);
 
         parent::__construct($options);
     }
@@ -90,7 +90,7 @@ class ConnectionHttpSocket
 
         ## determine protocol
 
-        $serverUrl = $this->optsData()->getServerUrl();
+        $serverUrl = $this->optsData()->getServerAddress();
 
         if (!$serverUrl)
             throw new \RuntimeException('Server Url is Mandatory For Connect.');
@@ -129,8 +129,9 @@ class ConnectionHttpSocket
         (isset($parsedServerUrl['port'])) ?: $parsedServerUrl['port'] = 80;
         $serverUrl = $this->__unparse_url($parsedServerUrl);
 
-        $stream = new StreamClient($serverUrl);
-        $stream->with($this->optsData());
+        $stream  = new StreamClient($serverUrl); // !!! Note:
+        $stream->with($this->optsData());        // Options data contains server url
+        $stream->setServerAddress($serverUrl);   // we want prepared server address!
 
         ### options
         // TODO watch getTimeout
@@ -182,7 +183,7 @@ class ConnectionHttpSocket
         catch (\Exception $e) {
             throw new ApiCallException(sprintf(
                 'Request Call Error When Send To Server (%s)'
-                , $this->optsData()->getServerUrl()
+                , $this->optsData()->getServerAddress()
             ), 0, 1, __FILE__, __LINE__, $e);
         }
 
