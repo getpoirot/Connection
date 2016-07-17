@@ -18,6 +18,9 @@
         "psr-0": {
             "Poirot\\Connection": "."
         }
+        , "files": [
+            "_functions.php"
+         ]
     }
     ,"repositories": [
         { "type": "git" ,"url": "https://github.com/phPoirot/Std.git" }
