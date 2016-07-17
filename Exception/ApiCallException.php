@@ -2,5 +2,5 @@
 namespace Poirot\Connection\Exception;
 
 class ApiCallException
-    extends \RuntimeException
+    extends \ErrorException
 { }

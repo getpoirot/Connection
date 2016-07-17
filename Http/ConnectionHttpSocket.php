@@ -48,6 +48,17 @@ class ConnectionHttpSocket
     /** @var \StdClass (object) ['headers'=> .., 'body'=>stream_offset] latest request expression to receive on events */
     protected $_tmp_expr;
 
+    protected $_supportedScheme = array(
+        'http'  => array(
+            'port'    => 80,
+            'wrapper' => 'tcp'
+        ),
+        'https' => array(
+            'port'    => 443,
+            'wrapper' => 'ssl'
+        )
+    );
+
     /**
      * Construct
      *
@@ -68,6 +79,7 @@ class ConnectionHttpSocket
 
     /**
      * TODO ssl connection
+     * @link http://www.devdungeon.com/content/how-use-ssl-sockets-php
      *
      * Get Prepared Resource Transporter
      *
@@ -125,8 +137,6 @@ class ConnectionHttpSocket
         // TODO validate scheme, ssl connection
 
         $parsedServerUrl = parse_url($serverUrl);
-        $parsedServerUrl['scheme'] = 'tcp';
-        (isset($parsedServerUrl['port'])) ?: $parsedServerUrl['port'] = 80;
         $serverUrl = $this->__unparse_url($parsedServerUrl);
 
         $stream  = new StreamClient($serverUrl); // !!! Note:
@@ -268,6 +278,7 @@ class ConnectionHttpSocket
 
 
         $stream = $this->streamable;
+
 
         $streamMeta = $stream->resource()->meta();
         if ($streamMeta && $streamMeta->isTimedOut())
@@ -418,23 +429,30 @@ finalize:
     // ...
 
     protected function __unparse_url($parsed_url) {
-        $scheme   = isset($parsed_url['scheme']) ? $parsed_url['scheme'] . '://' : '';
+        $scheme   = isset($parsed_url['scheme']) ? $parsed_url['scheme'] : '';
+
+        if (!isset($this->_supportedScheme[$scheme]))
+            throw new \Exception(sprintf('Scheme (%s) not support.', $scheme));
+
+        $wrapper  = $this->_supportedScheme[$scheme]['wrapper'].'://';
+        $port     = $this->_supportedScheme[$scheme]['port'];
+
         $host     = isset($parsed_url['host']) ? $parsed_url['host'] : '';
-        $port     = isset($parsed_url['port']) ? ':' . $parsed_url['port'] : '';
+        $port     = isset($parsed_url['port']) ? ':' . $parsed_url['port'] : ':'.$port;
         $user     = isset($parsed_url['user']) ? $parsed_url['user'] : '';
         $pass     = isset($parsed_url['pass']) ? ':' . $parsed_url['pass']  : '';
         $pass     = ($user || $pass) ? "$pass@" : '';
         $path     = isset($parsed_url['path']) ? $parsed_url['path'] : '';
         $query    = isset($parsed_url['query']) ? '?' . $parsed_url['query'] : '';
         $fragment = isset($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
-        return "$scheme$user$pass$host$port$path$query$fragment";
+
+        return "$wrapper$user$pass$host$port$path$query$fragment";
     }
 
     protected function __readHeadersFromStream(iStreamable $stream)
     {
         $headers = '';
         ## 255 can be vary, its each header length.
-        // TODO just read header part from aggregate stream, it can be tagged for each stream
         while(!$stream->isEOF() && ($line = $stream->readLine("\r\n", 255)) !== null ) {
             $break = false;
             $headers .= $line."\r\n";
