@@ -2,7 +2,7 @@
 namespace Poirot\Connection\Http\StreamFilter;
 
 use Poirot\Stream\Filter\aFilterStreamCustom;
-use Poirot\Stream\Filter\FilterStreamStreamPhpBuiltin;
+use Poirot\Stream\Filter\FilterStreamPhpBuiltin;
 use Poirot\Stream\Filter\RegistryOfFilterStream;
 
 /**
@@ -23,12 +23,12 @@ class DechunkFilter
 
     /**
      * Determine Using Internal PHP Dechunk filter if available
-     * @return DechunkFilter|FilterStreamStreamPhpBuiltin
+     * @return DechunkFilter|FilterStreamPhpBuiltin
      */
     static function factory()
     {
         if (in_array('dechunk', RegistryOfFilterStream::listFilters()))
-            return new FilterStreamStreamPhpBuiltin('dechunk');
+            return new FilterStreamPhpBuiltin('dechunk');
 
         return new static;
     }
