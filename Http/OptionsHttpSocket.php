@@ -33,14 +33,14 @@ class OptionsHttpSocket
      */
     function setServerAddress($socketUri)
     {
-        $this->socketUri = $socketUri;
+        $this->socketUri = (string) $socketUri;
         return $this;
     }
 
     /**
      * Get Current Socket Uri That Stream Built With
      *
-     * @return string
+     * @return string|null
      */
     function getServerAddress()
     {
