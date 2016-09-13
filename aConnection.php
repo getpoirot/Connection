@@ -46,7 +46,10 @@ abstract class aConnection
      * - send expression to server through transporter
      *   resource
      *
-     * !! it must be connected
+     * - don't set request globally through request() if
+     *   expr set
+     *
+     * !! getConnect IF NOT
      *
      * @param mixed $expr Expression
      *
@@ -65,9 +68,7 @@ abstract class aConnection
 
         # check connection
         if (!$this->isConnected())
-            throw new \RuntimeException(
-                'Connection not connected yet, connection must get connected by calling getConnect() method.'
-            );
+            $this->getConnect();
 
         # ! # remember last request
         $this->request($expr);

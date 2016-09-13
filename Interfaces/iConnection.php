@@ -28,13 +28,6 @@ interface iConnection
     function request($expr);
 
     /**
-     * Get Latest Request
-     *
-     * @return null|mixed
-     */
-    function getLastRequest();
-
-    /**
      * Send Expression To Server
      *
      * - send expression to server through transporter
@@ -43,7 +36,7 @@ interface iConnection
      * - don't set request globally through request() if
      *   expr set
      *
-     * !! it must be connected
+     * !! getConnect IF NOT
      *
      * @param mixed $expr Expression
      *
@@ -64,6 +57,13 @@ interface iConnection
      */
     function receive();
 
+    /**
+     * Get Latest Request
+     *
+     * @return null|mixed
+     */
+    function getLastRequest();
+    
     /**
      * Is Transporter Resource Available?
      *
