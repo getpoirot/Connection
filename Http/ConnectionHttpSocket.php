@@ -4,8 +4,14 @@ namespace Poirot\Connection\Http;
 use Poirot\Connection\aConnection;
 use Poirot\Connection\Exception\ApiCallException;
 use Poirot\Stream\Interfaces\iStreamable;
+use Poirot\Stream\ResourceStream;
 use Poirot\Stream\Streamable;
 use Poirot\Stream\StreamClient;
+use Poirot\Stream\Wrapper\WrapperPsrToPhpResource;
+use Psr\Http\Message\MessageInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 
 /*
 $httpRequest = new HttpRequest([
@@ -34,7 +40,7 @@ class ConnectionHttpSocket
     extends aConnection
 {
     /** @var Streamable When Connected */
-    protected $streamable;
+    protected $_streamableServerConnection;
 
     /**
      * the options will not changed when connected
@@ -59,13 +65,14 @@ class ConnectionHttpSocket
         )
     );
 
+    
     /**
      * Construct
      *
      * - pass transporter options on construct
      *
-     * @param null|string|$options    $serverUri_options
-     * @param array|\Traversable|null $options           Transporter Options
+     * @param null|string|array|\Traversable $serverUri_options
+     * @param array|\Traversable|null        $options           Transporter Options
      */
     function __construct($serverUri_options = null, $options = null)
     {
@@ -75,6 +82,25 @@ class ConnectionHttpSocket
             $this->optsData()->setServerAddress($serverUri_options);
 
         parent::__construct($options);
+    }
+
+    /**
+     * @override IDE Completion
+     *
+     * @param string|RequestInterface|StreamInterface $expr
+     *
+     * @return $this
+     */
+    function request($expr)
+    {
+        if (!(\Poirot\Std\isStringify($expr) || $expr instanceof RequestInterface || $expr instanceof StreamInterface))
+            throw new \InvalidArgumentException(sprintf(
+                'Expression must instance of RequestInterface/StreamInterface PSR or request string; given: (%s).'
+                , \Poirot\Std\flatten($expr)
+            ));
+
+        $this->expr = $expr;
+        return $this;
     }
 
     /**
@@ -94,35 +120,7 @@ class ConnectionHttpSocket
             ## close current transporter if connected
             $this->close();
 
-
-        # apply options to resource
-
-        ## options will not take an affect after connect
-        $this->connected_options = clone $this->optsData();
-
-        ## determine protocol
-
-        $serverUrl = $this->optsData()->getServerAddress();
-
-        if (!$serverUrl)
-            throw new \RuntimeException('Server Url is Mandatory For Connect.');
-
-
-        // get connect
-
-        try{
-            $this->streamable = $this->doConnect($serverUrl);
-        } catch(\Exception $e)
-        {
-            throw new \Exception(sprintf(
-                'Cannot connect to (%s).'
-                , $serverUrl
-                , $e->getCode()
-                , $e ## as previous exception
-            ));
-        }
-
-        return $this->streamable;
+        return $this->_getServerConnection();
     }
 
     /**
@@ -137,16 +135,15 @@ class ConnectionHttpSocket
         // TODO validate scheme, ssl connection
 
         $parsedServerUrl = parse_url($serverUrl);
-        $serverUrl = $this->__unparse_url($parsedServerUrl);
+        $serverUrl = $this->_unparse_url($parsedServerUrl);
 
-        $stream  = new StreamClient($serverUrl); // !!! Note:
-        $stream->with($this->optsData());        // Options data contains server url
-        $stream->setServerAddress($serverUrl);   // we want prepared server address!
-
-        ### options
-        // TODO watch getTimeout
-        $stream->setTimeout($this->optsData()->getTimeout());
-        $stream->setPersist($this->optsData()->isPersist());
+        $options = $this->optsData();
+        $stream  = new StreamClient($serverUrl);
+        $stream->setPersist($options->isPersist());
+        $stream->setAsync($options->isPersist());
+        $stream->setTimeout($options->getTimeout());
+        $stream->setContext($options->getContext());
+        $stream->setServerAddress($serverUrl);       // we want replaced prepared server address!
 
         $resource = $stream->getConnect();
         return new Streamable($resource);
@@ -173,24 +170,20 @@ class ConnectionHttpSocket
         {
             ## prepare expression before send
             $expr = $this->getLastRequest();
-            $expr = $this->onBeforeSendPrepareExpression($expr);
-            if (is_object($expr) && !$expr instanceof iStreamable)
-                $expr = (string) $expr;
-
-            if (is_string($expr)) {
-                $tStream = new Streamable\STemporary($expr);
-                $expr    = $tStream->rewind();
-            }
-
+            $expr = $this->triggerBeforeSendPrepareExpression($expr);
+            
             if (!$expr instanceof iStreamable)
                 throw new \InvalidArgumentException(sprintf(
                     'Http Expression must instance of iHttpRequest, RequestInterface or string. given: "%s".'
                     , \Poirot\Std\flatten($expr)
                 ));
 
-            $response = $this->__handleReqRes($expr);
+            // send request to server
+            $this->_sendToServer($expr);
+            $response = $this->receive();
         }
         catch (\Exception $e) {
+            kd($e);
             throw new ApiCallException(sprintf(
                 'Request Call Error When Send To Server (%s)'
                 , $this->optsData()->getServerAddress()
@@ -198,63 +191,6 @@ class ConnectionHttpSocket
         }
 
         $this->lastReceive = $response;
-        return $response;
-    }
-
-    /**
-     * Before Send Prepare Expression
-     * @param mixed $expr
-     * @return iStreamable|string
-     */
-    function onBeforeSendPrepareExpression($expr)
-    {
-        return $expr;
-    }
-
-    /**
-     * $responseHeaders can be changed by reference
-     *
-     * @param string $responseHeaders
-     *
-     * @return boolean consider continue with reading body from stream?
-     */
-    function onResponseHeaderReceived(&$responseHeaders)
-    {
-        return true; // keep continue
-    }
-
-    /**
-     * Get Body And Response Headers And Return Expected Response
-     *
-     * @param string|mixed     $responseHeaders default has headers string but it can changed
-     *                                          with onResponseHeaderReceived
-     * @param iStreamable|null $body
-     *
-     * @return mixed Expected Response
-     */
-    function onResponseReceivedComplete($responseHeaders, $body)
-    {
-        return (object) array('header' => $responseHeaders, 'body' => $body);
-    }
-
-    /**
-     * Send Request To Server And Receive Response
-     *
-     * @param iStreamable $expr
-     *
-     * @throws \Exception
-     * @return string
-     */
-    final protected function __handleReqRes($expr)
-    {
-        # send request
-        $headers = $this->__readHeadersFromStream($expr);
-
-        $this->streamable->write($headers);
-        $expr->pipeTo($this->streamable);
-
-        # receive rest response body
-        $response = $this->receive();
         return $response;
     }
 
@@ -269,34 +205,28 @@ class ConnectionHttpSocket
      * - it must always return raw response body from server
      *
      * @throws \Exception No Transporter established
-     * @return null|string|Streamable
+     * @return null|string|iStreamable
      */
     final function receive()
     {
         if ($this->lastReceive)
             return $this->lastReceive;
 
-
-        $stream = $this->streamable;
-
-
-        $streamMeta = $stream->resource()->meta();
-        if ($streamMeta && $streamMeta->isTimedOut())
-            throw new \RuntimeException(
-                "Read timed out after {$this->optsData()->getTimeout()} seconds."
-            );
+        $stream = $this->_getServerConnection();
 
         # read headers:
-        $headers = $this->__readHeadersFromStream($stream);
-        $body    = null;
+        $headers = $this->_readHeadersFromStream($stream);
 
         if (empty($headers))
             throw new \Exception('Server not respond to this request.');
 
+
+        $body    = null;
+
         // Fire up registered methods to prepare expression
         $responseHeaders = $headers;
         // Header Received:
-        if (!$this->onResponseHeaderReceived($responseHeaders))
+        if (!$this->triggerResponseHeaderReceived($responseHeaders))
             // terminate and return response
             goto finalize;
 
@@ -312,7 +242,7 @@ class ConnectionHttpSocket
          */
         $buffer = static::_newBufferStream();
 
-        $headers = self::parseHeaderLines($headers);
+        $headers = \Poirot\Connection\Http\parseHeaderLines($headers);
         if (array_key_exists('Content-Length', $headers)) {
             // (2) examining Content-Length;
             $length = (int) $headers['Content-Length'];
@@ -343,9 +273,19 @@ class ConnectionHttpSocket
 
         $body = $buffer->rewind();
 
+
 finalize:
 
-        return $this->onResponseReceivedComplete($responseHeaders, $body);
+        $header = '';
+        foreach ($headers as $h => $v) {
+            $header .= "{$h}: ".$v."\r\n";
+        }
+        $header .= "\r\n";
+
+        $rStream = new Streamable\SAggregateStreams();
+        $rStream->addStream(new Streamable\STemporary($header));
+        $rStream->addStream($body);
+        return $rStream->rewind();
     }
 
     /**
@@ -355,7 +295,7 @@ finalize:
      */
     function isConnected()
     {
-        return ($this->streamable !== null && $this->streamable->resource()->isAlive());
+        return ($this->_streamableServerConnection !== null && $this->_streamableServerConnection->resource()->isAlive());
     }
 
     /**
@@ -367,12 +307,151 @@ finalize:
         if (!$this->isConnected())
             return;
 
-        $this->streamable->resource()->close();
-        $this->streamable = null;
+        $this->_streamableServerConnection->resource()->close();
+        $this->_streamableServerConnection = null;
         $this->connected_options = null;
     }
 
 
+    // ...
+
+    /**
+     * Before Send Prepare Expression
+     *
+     * @param string|RequestInterface|StreamInterface $expr
+     *
+     * @return iStreamable
+     */
+    protected function triggerBeforeSendPrepareExpression($expr)
+    {
+        # PSR RequestInterface
+        if ($expr instanceof RequestInterface) {
+            $tStream = new Streamable\SAggregateStreams();
+         
+            ## headers
+            $headers = \Poirot\Psr7\renderHeaderHttpMessage($expr);
+            $tStream->addStream(new Streamable\STemporary($headers));
+            $tStream->addStream(new Streamable\STemporary("\r\n"));
+
+            ## body
+            $body = $expr->getBody();
+            if ($body) {
+                $resource = WrapperPsrToPhpResource::convertToResource($body);
+                $resource = new ResourceStream($resource);
+                $tStream->addStream(new Streamable($resource));
+            }
+
+            $expr = $tStream->rewind();
+        }
+
+        # Stringify
+        if (!$expr instanceof iStreamable && is_object($expr))
+            $expr = (string) $expr;
+
+        # String
+        if (is_string($expr)) {
+            $tStream = new Streamable\STemporary($expr);
+            $expr    = $tStream->rewind();
+        }
+
+        return $expr;
+    }
+
+    /**
+     * $responseHeaders can be changed by reference
+     *
+     * @param string $responseHeaders
+     *
+     * @return boolean consider continue with reading body from stream?
+     */
+    protected function triggerResponseHeaderReceived(&$responseHeaders)
+    {
+        return true; // keep continue
+    }
+
+
+    /**
+     * Read Only Header Parts of Stream
+     * @param iStreamable $stream
+     * @return string
+     * @throws \Exception
+     */
+    protected function _readHeadersFromStream(iStreamable $stream)
+    {
+        if ($stream->getCurrOffset() > 0)
+            throw new \Exception(sprintf(
+                'Reading Headers Must Start From Begining Of Request Stream; current offset is: (%s).'
+                , $stream->getCurrOffset()
+            ));
+
+        $headers = '';
+        ## 255 can be vary, its each header length.
+        while(!$stream->isEOF() && ($line = $stream->readLine("\r\n", 255)) !== null ) {
+            $break = false;
+            $headers .= $line."\r\n";
+            if (trim($line) === '')
+                ## http headers part read complete
+                $break = true;
+
+            if ($break) break;
+        }
+
+        return $headers;
+    }
+
+    /**
+     * Send Data To Server
+     * @param string|iStreamable $content
+     */
+    protected function _sendToServer($content)
+    {
+        $server = $this->_getServerConnection();
+
+        if (is_string($content))
+            $server->write($content);
+        else
+            $content->pipeTo($server);
+    }
+
+    /**
+     * @return iStreamable|Streamable
+     * @throws \Exception
+     */
+    protected function _getServerConnection()
+    {
+        if ($this->_streamableServerConnection)
+            return $this->_streamableServerConnection;
+
+        # apply options to resource
+
+        ## options will not take an affect after connect
+        $this->connected_options = clone $this->optsData();
+
+        ## determine protocol
+
+        $serverUrl = $this->optsData()->getServerAddress();
+
+        if (!$serverUrl)
+            throw new \RuntimeException('Server Url is Mandatory For Connect.');
+
+
+        // get connect
+
+        try {
+
+            return $this->_streamableServerConnection = $this->doConnect($serverUrl);
+
+        } catch(\Exception $e) {
+            kd($e);
+            throw new \Exception(sprintf(
+                'Cannot connect to (%s).'
+                , $serverUrl
+                , $e->getCode()
+                , $e ## as previous exception
+            ));
+        }
+    }
+    
     // options:
 
     /**
@@ -401,34 +480,10 @@ finalize:
         return $options; 
     }
 
-    // util:
-
-    /**
-     * Parse Header line
-     *
-     * @param string $message
-     *
-     * @return false|array[string 'label', string 'value']
-     */
-    static function parseHeaderLines($message)
-    {
-        if (!preg_match_all('/.*[\n]?/', $message, $lines))
-            throw new \InvalidArgumentException('Error Parsing Request Message.');
-
-        $lines = $lines[0];
-
-        $headers = array();
-        foreach ($lines as $line) {
-            if (preg_match('/^(?P<label>[^()><@,;:\"\\/\[\]?=}{ \t]+):(?P<value>.*)$/', $line, $matches))
-                $headers[$matches['label']] = trim($matches['value']);
-        }
-
-        return $headers;
-    }
 
     // ...
 
-    protected function __unparse_url($parsed_url) {
+    protected function _unparse_url($parsed_url) {
         $scheme   = isset($parsed_url['scheme']) ? $parsed_url['scheme'] : '';
 
         if (!isset($this->_supportedScheme[$scheme]))
@@ -448,25 +503,7 @@ finalize:
 
         return "$wrapper$user$pass$host$port$path$query$fragment";
     }
-
-    protected function __readHeadersFromStream(iStreamable $stream)
-    {
-        $headers = '';
-        ## 255 can be vary, its each header length.
-        while(!$stream->isEOF() && ($line = $stream->readLine("\r\n", 255)) !== null ) {
-            $break = false;
-            $headers .= $line."\r\n";
-            if (trim($line) === '') {
-                ## http headers part read complete
-                $break = true;
-            }
-
-            if ($break) break;
-        }
-
-        return $headers;
-    }
-
+    
     /**
      * @return Streamable\STemporary
      */

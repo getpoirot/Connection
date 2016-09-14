@@ -2,15 +2,38 @@
 namespace Poirot\Connection\Http
 {
     /**
-     * Parse Response Headers
+     * Parse Header line
      *
      * @param string $headers
      *
+     * @return false|array[string 'label', string 'value']
+     */
+    function parseHeaderLines($headers)
+    {
+        if (!preg_match_all('/.*[\n]?/', $headers, $lines))
+            throw new \InvalidArgumentException('Error Parsing Request Message.');
+
+        $lines = $lines[0];
+
+        $headers = array();
+        foreach ($lines as $line) {
+            if (preg_match('/^(?P<label>[^()><@,;:\"\\/\[\]?=}{ \t]+):(?P<value>.*)$/', $line, $matches))
+                $headers[$matches['label']] = trim($matches['value']);
+        }
+
+        return $headers;
+    }
+    
+    /**
+     * Parse Response Headers
+     *
+     * @param string $httpMessage
+     *
      * @return array['version'=>string, 'status'=>int, 'reason'=>string, 'headers'=>array(key=>val)]
      */
-    function parseResponseHeaders($headers)
+    function parseResponseHeaders($httpMessage)
     {
-        if (!preg_match_all('/.*[\r\n]?/', $headers, $lines))
+        if (!preg_match_all('/.*[\r\n]?/', $httpMessage, $lines))
             throw new \InvalidArgumentException('Error Parsing Request Message.');
 
         $lines = $lines[0];
@@ -23,7 +46,7 @@ namespace Poirot\Connection\Http
             throw new \InvalidArgumentException(
                 'A valid response status line was not found in the provided string.'
                 . ' response:'
-                . $headers
+                . $httpMessage
             );
 
 
