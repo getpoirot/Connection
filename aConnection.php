@@ -7,6 +7,7 @@ use Poirot\Connection\Interfaces\iConnection;
 use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
 use Poirot\Std\Interfaces\Struct\iDataOptions;
 use Poirot\Std\Struct\DataOptionsOpen;
+use Poirot\Stream\Interfaces\iStreamable;
 use Psr\Http\Message\StreamInterface;
 
 abstract class aConnection
@@ -94,7 +95,7 @@ abstract class aConnection
      * - return null if request not sent
      *
      * @throws \Exception No Transporter established
-     * @return null|string|StreamInterface
+     * @return null|string|iStreamable
      */
     abstract function receive();
 

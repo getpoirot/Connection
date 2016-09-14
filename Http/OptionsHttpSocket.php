@@ -2,9 +2,11 @@
 namespace Poirot\Connection\Http;
 
 use Poirot\Std\Struct\aDataOptions;
+
 use Poirot\Stream\Context\ContextStreamHttp;
 use Poirot\Stream\Context\ContextStreamSocket;
 use Poirot\Stream\Interfaces\Context\iContextStream;
+
 
 class OptionsHttpSocket
     extends aDataOptions
