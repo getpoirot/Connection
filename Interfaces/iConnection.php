@@ -4,8 +4,6 @@ namespace Poirot\Connection\Interfaces;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
 
-use Psr\Http\Message\StreamInterface;
-
 use Poirot\Connection\Exception\ApiCallException;
 use Poirot\Connection\Exception\ConnectException;
 

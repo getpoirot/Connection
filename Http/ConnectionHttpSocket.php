@@ -4,13 +4,10 @@ namespace Poirot\Connection\Http;
 use Poirot\Connection\aConnection;
 use Poirot\Connection\Exception\ApiCallException;
 use Poirot\Stream\Interfaces\iStreamable;
-use Poirot\Stream\ResourceStream;
+use Poirot\Stream\Psr\StreamBridgeFromPsr;
 use Poirot\Stream\Streamable;
 use Poirot\Stream\StreamClient;
-use Poirot\Stream\Wrapper\WrapperPsrToPhpResource;
-use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
 /*
@@ -122,33 +119,7 @@ class ConnectionHttpSocket
 
         return $this->_getServerConnection();
     }
-
-    /**
-     * Do Connect To Server With Streamable
-     *
-     * @param string $serverUrl
-     *
-     * @return iStreamable
-     */
-    function doConnect($serverUrl)
-    {
-        // TODO validate scheme, ssl connection
-
-        $parsedServerUrl = parse_url($serverUrl);
-        $serverUrl = $this->_unparse_url($parsedServerUrl);
-
-        $options = $this->optsData();
-        $stream  = new StreamClient($serverUrl);
-        $stream->setPersist($options->isPersist());
-        $stream->setAsync($options->isPersist());
-        $stream->setTimeout($options->getTimeout());
-        $stream->setContext($options->getContext());
-        $stream->setServerAddress($serverUrl);       // we want replaced prepared server address!
-
-        $resource = $stream->getConnect();
-        return new Streamable($resource);
-    }
-
+    
     /**
      * Send Expression On the wire
      *
@@ -183,7 +154,6 @@ class ConnectionHttpSocket
             $response = $this->receive();
         }
         catch (\Exception $e) {
-            kd($e);
             throw new ApiCallException(sprintf(
                 'Request Call Error When Send To Server (%s)'
                 , $this->optsData()->getServerAddress()
@@ -207,7 +177,7 @@ class ConnectionHttpSocket
      * @throws \Exception No Transporter established
      * @return null|string|iStreamable
      */
-    final function receive()
+    function receive()
     {
         if ($this->lastReceive)
             return $this->lastReceive;
@@ -335,11 +305,8 @@ finalize:
 
             ## body
             $body = $expr->getBody();
-            if ($body) {
-                $resource = WrapperPsrToPhpResource::convertToResource($body);
-                $resource = new ResourceStream($resource);
-                $tStream->addStream(new Streamable($resource));
-            }
+            if ($body)
+                $tStream->addStream(new StreamBridgeFromPsr($body));
 
             $expr = $tStream->rewind();
         }
@@ -439,7 +406,7 @@ finalize:
 
         try {
 
-            return $this->_streamableServerConnection = $this->doConnect($serverUrl);
+            return $this->_streamableServerConnection = $this->_connect($serverUrl);
 
         } catch(\Exception $e) {
             kd($e);
@@ -450,6 +417,32 @@ finalize:
                 , $e ## as previous exception
             ));
         }
+    }
+
+    /**
+     * Do Connect To Server With Streamable
+     *
+     * @param string $serverUrl
+     *
+     * @return iStreamable
+     */
+    function _connect($serverUrl)
+    {
+        // TODO validate scheme, ssl connection
+
+        $parsedServerUrl = parse_url($serverUrl);
+        $serverUrl = $this->_unparse_url($parsedServerUrl);
+
+        $options = $this->optsData();
+        $stream  = new StreamClient($serverUrl);
+        $stream->setPersist($options->isPersist());
+        $stream->setAsync($options->isPersist());
+        $stream->setTimeout($options->getTimeout());
+        $stream->setContext($options->getContext());
+        $stream->setServerAddress($serverUrl);       // we want replaced prepared server address!
+
+        $resource = $stream->getConnect();
+        return new Streamable($resource);
     }
     
     // options:
