@@ -72,6 +72,9 @@ namespace Poirot\Connection\Http
             $return['headers'][$matches['label']] = trim($matches['value']);
         }
 
+        // sort headers
+        ksort($return['headers']);
+        
         return $return;
     }
 

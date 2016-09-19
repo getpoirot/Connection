@@ -1,6 +1,7 @@
 <?php
 namespace Poirot\Connection\Interfaces;
 
+use Poirot\Stream\Interfaces\iStreamable;
 use Psr\Http\Message\StreamInterface;
 
 use Poirot\Stream\Streamable;
@@ -55,7 +56,7 @@ interface iConnection
      *   by send expression
      * - return null if request not sent
      *
-     * @return StreamInterface|null
+     * @return iStreamable|null
      * @throws \Exception No Transporter established
      */
     function receive();
