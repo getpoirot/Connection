@@ -167,7 +167,7 @@ class ConnectionHttpSocket
         $stream  = $this->_serverConnAsStream();
 
         # read headers:
-        $headers = $this->_receiveHeadersFromStream($stream);
+        $headers = \Poirot\Connection\Http\readAndSkipHeaders($stream);
         if (empty($headers))
             throw new exServerNotUnderstand(sprintf(
                 'Server not respond to request; response headers not received. [%s]'
@@ -354,36 +354,7 @@ finalize:
     }
     
     // ...
-
-    /**
-     * Read Only Header Parts of Stream
-     * @param iStreamable $stream
-     * @return string
-     * @throws \Exception
-     */
-    protected function _receiveHeadersFromStream(iStreamable $stream)
-    {
-        if ($stream->getCurrOffset() > 0)
-            throw new \Exception(sprintf(
-                'Reading Headers Must Start From Begining Of Request Stream; current offset is: (%s).'
-                , $stream->getCurrOffset()
-            ));
-
-        $headers = '';
-        ## 255 can be vary, its each header length.
-        while(!$stream->isEOF() && ($line = $stream->readLine("\r\n", 255)) !== null ) {
-            $break = false;
-            $headers .= $line."\r\n";
-            if (trim($line) === '')
-                ## http headers part read complete
-                $break = true;
-
-            if ($break) break;
-        }
-
-        return $headers;
-    }
-
+    
     /**
      * Send Data To Server
      * @param string|iStreamable $content

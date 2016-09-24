@@ -1,6 +1,10 @@
 <?php
 namespace Poirot\Connection\Http
 {
+
+    use Poirot\Stream\Interfaces\iStreamable;
+    use Poirot\Stream\Streamable\STemporary;
+
     /**
      * Parse Header line
      *
@@ -128,5 +132,46 @@ namespace Poirot\Connection\Http
         parse_str(urldecode(implode("\r\n", $lines)), $output);
         $return['body'] = $output;
         return $return;
+    }
+
+    /**
+     * Read and Skip Headers Of Http Message
+     * 
+     * @param iStreamable|string $message
+     * 
+     * @return string Headers of http message
+     * @throws \Exception
+     */
+    function readAndSkipHeaders($message, $debug = false)
+    {
+        if (!$message instanceof iStreamable) {
+            $message = (string) $message;
+            $message = new STemporary($message);
+        }
+        
+        $stream = $message;
+        if ($stream->getCurrOffset() > 0 ) {
+            if (!$stream->resource()->isSeekable())
+                throw new \Exception(sprintf(
+                    'Reading Headers Must Start From Begining Of Request Stream Or Stream Been Seekable; current offset is: (%s).'
+                    , $stream->getCurrOffset()
+                ));
+            else
+                $stream->seek(0);
+        }
+
+        $headers = '';
+        ## 255 can be vary, its each header length.
+        while(!$stream->isEOF() && ($line = $stream->readLine("\r\n")) !== null ) {
+            $break = false;
+            $headers .= $line."\r\n";
+            if (trim($line) === '')
+                ## http headers part read complete
+                $break = true;
+
+            if ($break) break;
+        }
+
+        return $headers;
     }
 }
