@@ -142,7 +142,7 @@ namespace Poirot\Connection\Http
      * @return string Headers of http message
      * @throws \Exception
      */
-    function readAndSkipHeaders($message, $debug = false)
+    function readAndSkipHeaders($message)
     {
         if (!$message instanceof iStreamable) {
             $message = (string) $message;
