@@ -25,7 +25,7 @@ class DechunkFilter
      * Determine Using Internal PHP Dechunk filter if available
      * @return DechunkFilter|FilterStreamPhpBuiltin
      */
-    static function factory()
+    static function newInstance()
     {
         if (in_array('dechunk', RegistryOfFilterStream::listFilters()))
             return new FilterStreamPhpBuiltin('dechunk');
