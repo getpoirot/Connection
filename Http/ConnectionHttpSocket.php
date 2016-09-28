@@ -124,7 +124,7 @@ class ConnectionHttpSocket
             ## prepare expression before send
             $expr = $this->getLastRequest();
             $expr = $this->makeStreamFromRequestExpression($expr);
-            
+
             if (!$expr instanceof iStreamable)
                 throw new \InvalidArgumentException(sprintf(
                     'Http Expression must instance of iHttpRequest, RequestInterface or string. given: "%s".'
@@ -363,10 +363,11 @@ finalize:
     {
         $server = $this->_serverConnAsStream();
 
-        if (is_string($content))
-            $server->write($content);
-        else
+        if (is_string($content)) {
+            $server->write($content, null, true);
+        } else {
             $content->pipeTo($server);
+        }
     }
 
     /**
