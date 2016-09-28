@@ -132,7 +132,7 @@ class ConnectionHttpSocket
                 ));
 
             // send request to server
-            $this->_sendToServer($expr);
+            $this->_sendToServer($expr->rewind());
             $response = $this->receive();
         }
         catch (\Exception $e) {
