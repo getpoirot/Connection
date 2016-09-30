@@ -364,7 +364,7 @@ finalize:
         $server = $this->_serverConnAsStream();
 
         if (is_string($content)) {
-            $server->write($content, null, true);
+            $server->write($content);
         } else {
             $content->pipeTo($server);
         }
