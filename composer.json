@@ -10,8 +10,8 @@
         }
     ],
     "require": {
-      "poirot/std": "dev-devel"
-      , "poirot/stream": "dev-devel"
+      "poirot/std": "dev-master"
+      , "poirot/stream": "dev-master"
     },
     "target-dir": "Poirot/Connection"
     , "autoload"  : {
@@ -22,8 +22,4 @@
             "_functions.php"
          ]
     }
-    ,"repositories": [
-        { "type": "git" ,"url": "https://github.com/phPoirot/Std.git" }
-       ,{ "type": "git" ,"url": "https://github.com/phPoirot/Stream.git" }
-    ]
 }
