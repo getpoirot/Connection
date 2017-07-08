@@ -2,6 +2,9 @@
 namespace Poirot\Connection\Http;
 
 use Poirot\Connection\Exception\exServerNotUnderstand;
+use Poirot\Stream\Context\ContextStreamHttp;
+use Poirot\Stream\Context\ContextStreamSocket;
+use Poirot\Stream\Interfaces\Context\iContextStream;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamInterface;
 
@@ -11,7 +14,7 @@ use Poirot\Stream\Streamable;
 use Poirot\Stream\StreamClient;
 
 use Poirot\Connection\aConnection;
-use Poirot\Connection\Exception\ApiCallException;
+use Poirot\Connection\Exception\exSendExpressionToServer;
 
 /*
 $httpRequest = new HttpRequest([
@@ -42,12 +45,6 @@ class ConnectionHttpSocket
     /** @var Streamable When Connected */
     protected $_streamableServerConnection;
 
-    /**
-     * the options will not changed when connected
-     * @var OptionsHttpSocket
-     */
-    protected $connected_options;
-
     /** @var bool  */
     protected $lastReceive = false;
 
@@ -65,7 +62,18 @@ class ConnectionHttpSocket
         )
     );
 
-    
+    /** @var string */
+    protected $socketUri    = null;
+    /** @var float */
+    protected $timeout      = 20;
+    /** @var boolean */
+    protected $persist      = false;
+    /** @var boolean */
+    protected $async        = false;
+    /** @var iContextStream */
+    protected $context;
+
+
     /**
      * Construct
      *
@@ -79,7 +87,7 @@ class ConnectionHttpSocket
         if (is_array($serverUri_options) || $serverUri_options instanceof \Traversable)
             $options = $serverUri_options;
         elseif(is_string($serverUri_options))
-            $this->optsData()->setServerAddress($serverUri_options);
+            $this->setServerAddress($serverUri_options);
 
         parent::__construct($options);
     }
@@ -110,7 +118,7 @@ class ConnectionHttpSocket
      *
      * !! get expression from getRequest()
      *
-     * @throws ApiCallException
+     * @throws exSendExpressionToServer
      * @return iStreamable Response
      */
     final function doSend()
@@ -136,7 +144,7 @@ class ConnectionHttpSocket
             $response = $this->receive();
         }
         catch (\Exception $e) {
-            throw new ApiCallException(sprintf(
+            throw new exSendExpressionToServer(sprintf(
                 'Request Call Error When Send To Server (%s)'
                 , $this->optsData()->getServerAddress()
             ), 0, 1, __FILE__, __LINE__, $e);
@@ -386,7 +394,7 @@ finalize:
 
         ## determine protocol
 
-        $serverUrl = $this->optsData()->getServerAddress();
+        $serverUrl = $this->getServerAddress();
 
         if (!$serverUrl)
             throw new \RuntimeException('Server Url is Mandatory For Connect.');
@@ -423,46 +431,152 @@ finalize:
         $parsedServerUrl = parse_url($serverUrl);
         $serverUrl = $this->_unparse_url($parsedServerUrl);
 
-        $options = $this->optsData();
         $stream  = new StreamClient($serverUrl);
-        $stream->setPersist($options->isPersist());
-        $stream->setAsync($options->isPersist());
-        $stream->setTimeout($options->getTimeout());
-        $stream->setContext($options->getContext());
+        $stream->setPersist($this->isPersist());
+        $stream->setAsync($this->isAsync());
+        $stream->setTimeout($this->getTimeout());
+        $stream->setContext($this->getContext());
         $stream->setServerAddress($serverUrl);       // we want replaced prepared server address!
 
         $resource = $stream->getConnect();
         return new Streamable($resource);
     }
-    
-    // options:
+
+
+    // Options:
 
     /**
-     * @override just for ide completion
-     * @return OptionsHttpSocket
+     * Set Socket Uri
+     *
+     * Note: When specifying a numerical IPv6 address (e.g. fe80::1),
+     *       you must enclose the IP in square brackets—for example,
+     *       tcp://[fe80::1]:80
+     *
+     * @param string $socketUri
+     *
+     * @return $this
      */
-    function optsData()
+    function setServerAddress($socketUri)
     {
-        if ($this->isConnected())
-            ## the options will not changed when connected
-            return $this->connected_options;
-
-        return parent::optsData();
+        $this->socketUri = (string) $socketUri;
+        return $this;
     }
 
     /**
-     * @override
-     * @return OptionsHttpSocket
+     * Get Current Socket Uri That Stream Built With
+     *
+     * @return string|null
      */
-    static function newOptsData($builder = null)
+    function getServerAddress()
     {
-        $options = new OptionsHttpSocket;
-        if ($builder !== null)
-            $options->import($builder);
-        
-        return $options; 
+        return $this->socketUri;
     }
 
+    /**
+     * Set Default Base Context Options
+     *
+     * @param iContextStream $context
+     *
+     * @throws \InvalidArgumentException
+     * @return $this
+     */
+    function setContext(iContextStream $context)
+    {
+        $this->context = $context;
+        return $this;
+    }
+
+    /**
+     * Get Default Base Context Options
+     *
+     * @return iContextStream
+     */
+    function getContext()
+    {
+        if (!$this->context) {
+            $context = new ContextStreamSocket;
+            $context->bindWith(new ContextStreamHttp);
+//            $this->context->bindWith(new HttpsContext);
+
+            $this->setContext($context);
+        }
+
+        return $this->context;
+    }
+
+    /**
+     * Set timeout period on a stream
+     *
+     * - must store time in float mode
+     *   @see self::getTimeout
+     *
+     * @param float|array $seconds In Form Of time.utime
+     *
+     * @return $this
+     */
+    function setTimeout($seconds)
+    {
+        if (is_array($seconds))
+            $seconds = implode('.', $seconds);
+
+        $this->timeout = $seconds;
+        return $this;
+    }
+
+    /**
+     * Get Timeout
+     *
+     * @return float
+     */
+    function getTimeout()
+    {
+        if (!$this->timeout)
+            $this->setTimeout(ini_get('default_socket_timeout'));
+
+        return $this->timeout;
+    }
+
+    /**
+     * Set To Persistent Internet or Unix Domain Socket
+     * Connection Built
+     *
+     * @param bool $flag
+     *
+     * @return $this
+     */
+    function setPersist($flag = true)
+    {
+        $this->persist = (boolean) $flag;
+        return $this;
+    }
+
+    /**
+     * Indicate Is Connection Have To Built On Persistent Mode
+     *
+     * @return boolean
+     */
+    function isPersist()
+    {
+        return $this->persist;
+    }
+
+    /**
+     * @param boolean $async
+     * @return $this
+     */
+    function setAsync($async = true)
+    {
+        $this->async = (boolean) $async;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    function isAsync()
+    {
+        return $this->async;
+    }
 
     // ...
 

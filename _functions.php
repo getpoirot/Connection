@@ -1,7 +1,6 @@
 <?php
 namespace Poirot\Connection\Http
 {
-
     use Poirot\Stream\Interfaces\iStreamable;
     use Poirot\Stream\Streamable\STemporary;
 

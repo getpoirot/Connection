@@ -1,6 +1,6 @@
 <?php
 namespace Poirot\Connection\Exception;
 
-class ConnectException 
+class exConnection
     extends \RuntimeException
 { }

@@ -1,6 +1,6 @@
 <?php
 namespace Poirot\Connection\Exception;
 
-class ApiCallException
+class exSendExpressionToServer
     extends \ErrorException
 { }

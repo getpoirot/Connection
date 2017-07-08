@@ -2,12 +2,8 @@
 namespace Poirot\Connection\Interfaces;
 
 use Poirot\Stream\Interfaces\iStreamable;
-use Psr\Http\Message\StreamInterface;
-
-use Poirot\Stream\Streamable;
-
-use Poirot\Connection\Exception\ApiCallException;
-use Poirot\Connection\Exception\ConnectException;
+use Poirot\Connection\Exception\exSendExpressionToServer;
+use Poirot\Connection\Exception\exConnection;
 
 
 interface iConnection
@@ -17,7 +13,7 @@ interface iConnection
      *
      * - prepare resource with options
      *
-     * @throws ConnectException
+     * @throws exConnection
      * @return mixed Transporter Resource
      */
     function getConnect();
@@ -44,7 +40,7 @@ interface iConnection
      *
      * @param mixed $expr Expression
      *
-     * @throws ApiCallException
+     * @throws exSendExpressionToServer
      * @return mixed Prepared Server Response
      */
     function send($expr = null);

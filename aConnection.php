@@ -1,45 +1,28 @@
 <?php
 namespace Poirot\Connection;
 
-
-use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
-use Poirot\Std\Interfaces\Struct\iDataOptions;
-use Poirot\Std\Struct\DataOptionsOpen;
-
+use Poirot\Std\ConfigurableSetter;
 use Poirot\Stream\Interfaces\iStreamable;
 
-use Poirot\Connection\Exception\ApiCallException;
-use Poirot\Connection\Exception\ConnectException;
+use Poirot\Connection\Exception\exSendExpressionToServer;
+use Poirot\Connection\Exception\exConnection;
 use Poirot\Connection\Interfaces\iConnection;
 
 
 abstract class aConnection
+    extends ConfigurableSetter
     implements iConnection
-    , ipOptionsProvider
 {
-    protected $options;
     /** @var mixed Expression to Send */
     protected $expr;
 
-    /**
-     * Construct
-     *
-     * - pass transporter options on construct
-     *
-     * @param array|\Traversable $options Transporter Options
-     */
-    function __construct($options = null)
-    {
-        if ($options !== null)
-            $this->optsData()->import($options);
-    }
 
     /**
      * Get Prepared Resource Transporter
      *
      * - prepare resource with options
      *
-     * @throws ConnectException
+     * @throws exConnection
      * @return mixed Transporter Resource
      */
     abstract function getConnect();
@@ -57,7 +40,7 @@ abstract class aConnection
      *
      * @param mixed $expr Expression
      *
-     * @throws ApiCallException
+     * @throws exSendExpressionToServer
      * @return mixed Prepared Server Response
      */
     final function send($expr = null)
@@ -71,7 +54,7 @@ abstract class aConnection
             );
 
         # check connection
-        if (!$this->isConnected())
+        if (! $this->isConnected() )
             $this->getConnect();
 
         # ! # remember last request
@@ -85,7 +68,7 @@ abstract class aConnection
      *
      * !! get expression from getRequest()
      *
-     * @throws ApiCallException
+     * @throws exSendExpressionToServer
      * @return mixed Response
      */
     abstract function doSend();
@@ -140,41 +123,14 @@ abstract class aConnection
     }
 
 
-    // ...
+    // Options:
 
-    /**
-     * @return iDataOptions
-     */
-    function optsData()
+
+    // ..
+
+    function __destruct()
     {
-        if (!$this->options)
-            $this->options = static::newOptsData();
-
-        return $this->options;
-    }
-
-    /**
-     * Get An Bare Options Instance
-     *
-     * ! it used on easy access to options instance
-     *   before constructing class
-     *   [php]
-     *      $opt = Filesystem::optionsIns();
-     *      $opt->setSomeOption('value');
-     *
-     *      $class = new Filesystem($opt);
-     *   [/php]
-     *
-     * @param null|mixed $builder Builder Options as Constructor
-     *
-     * @return DataOptionsOpen|iDataOptions
-     */
-    static function newOptsData($builder = null)
-    {
-        $options = new DataOptionsOpen;
-        if ($builder !== null)
-            $options->import($builder);
-
-        return $options;
+        if ( $this->isConnected() )
+            $this->close();
     }
 }
