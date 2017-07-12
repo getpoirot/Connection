@@ -21,7 +21,7 @@ interface iConnection
     /**
      * Set Request Expression To Send Over Wire
      *
-     * @param mixed $expr
+     * @param @param string|resource|iStreamable $expr
      *
      * @return $this
      */
@@ -38,7 +38,7 @@ interface iConnection
      *
      * !! getConnect IF NOT
      *
-     * @param mixed $expr Expression
+     * @param string|resource|iStreamable $expr Expression
      *
      * @throws exSendExpressionToServer
      * @return mixed Prepared Server Response
@@ -52,7 +52,7 @@ interface iConnection
      *   by send expression
      * - return null if request not sent
      *
-     * @return iStreamable|null
+     * @return string|null
      * @throws \Exception No Transporter established
      */
     function receive();

@@ -2,7 +2,6 @@
 namespace Poirot\Connection;
 
 use Poirot\Std\ConfigurableSetter;
-use Poirot\Stream\Interfaces\iStreamable;
 
 use Poirot\Connection\Exception\exSendExpressionToServer;
 use Poirot\Connection\Exception\exConnection;
@@ -80,8 +79,8 @@ abstract class aConnection
      *   by send expression
      * - return null if request not sent
      *
+     * @return string|null
      * @throws \Exception No Transporter established
-     * @return iStreamable|string
      */
     abstract function receive();
 

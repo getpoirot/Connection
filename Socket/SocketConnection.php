@@ -5,7 +5,6 @@ use Poirot\Connection\aConnection;
 use Poirot\Connection\Exception\exSendExpressionToServer;
 use Poirot\Connection\Exception\exConnection;
 use Poirot\Std\ErrorStack;
-use Poirot\Stream\Interfaces\iStreamable;
 
 
 class SocketConnection
@@ -24,7 +23,7 @@ class SocketConnection
      *
      * - prepare resource with options
      *
-     * @return mixed
+     * @return resource
      * @throws exConnection|\Exception
      */
     function getConnect()
@@ -52,7 +51,7 @@ class SocketConnection
         ErrorStack::handleDone();
 
 
-        return $result;
+        return $conn;
     }
 
     /**
@@ -85,10 +84,12 @@ class SocketConnection
      *   by send expression
      * - return null if request not sent
      *
+     * @param int|null $length
+     *
+     * @return string|null
      * @throws \Exception No Transporter established
-     * @return iStreamable|string
      */
-    function receive()
+    function receive($length = null)
     {
         if ($this->lastReceive)
             return $this->lastReceive;
@@ -103,7 +104,7 @@ class SocketConnection
             throw new \RuntimeException($this->getRemoteAddr() . ' has timed out.');
 
 
-        if ( false === $r = fgets($conn, 1024) )
+        if ( false === $r = fgets($conn, ($length === null) ? $length : 1024) )
             throw new \RuntimeException('Could not read from ' . $this->getRemoteAddr());
 
         return $r;

@@ -75,42 +75,6 @@ class ConnectionHttpSocket
 
 
     /**
-     * Construct
-     *
-     * - pass transporter options on construct
-     *
-     * @param null|string|array|\Traversable $serverUri_options
-     * @param array|\Traversable|null        $options           Transporter Options
-     */
-    function __construct($serverUri_options = null, $options = null)
-    {
-        if (is_array($serverUri_options) || $serverUri_options instanceof \Traversable)
-            $options = $serverUri_options;
-        elseif(is_string($serverUri_options))
-            $this->setServerAddress($serverUri_options);
-
-        parent::__construct($options);
-    }
-
-    /**
-     * @override IDE Completion
-     *
-     * @param string|RequestInterface|StreamInterface $expr
-     *
-     * @return $this
-     */
-    function request($expr)
-    {
-        if (!(\Poirot\Std\isStringify($expr) || $expr instanceof RequestInterface || $expr instanceof StreamInterface))
-            throw new \InvalidArgumentException(sprintf(
-                'Expression must instance of RequestInterface/StreamInterface PSR or request string; given: (%s).'
-                , \Poirot\Std\flatten($expr)
-            ));
-
-        return parent::request($expr);
-    }
-    
-    /**
      * Send Expression On the wire
      *
      * - be aware if you pass streamable it will continue from current
@@ -164,8 +128,8 @@ class ConnectionHttpSocket
      * - return null if request not sent or complete
      * - it must always return raw response body from server
      *
+     * @return string|null
      * @throws \Exception No Transporter established
-     * @return iStreamable|null
      */
     final function receive()
     {
