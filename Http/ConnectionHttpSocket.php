@@ -103,14 +103,18 @@ class ConnectionHttpSocket
                     , \Poirot\Std\flatten($expr)
                 ));
 
+
+            if ( $expr->resource()->isSeekable() )
+                $expr->rewind();
+
             // send request to server
-            $this->_sendToServer($expr->rewind());
+            $this->_sendToServer($expr);
             $response = $this->receive();
         }
         catch (\Exception $e) {
             throw new exSendExpressionToServer(sprintf(
                 'Request Call Error When Send To Server (%s)'
-                , $this->optsData()->getServerAddress()
+                , $this->getServerAddress()
             ), 0, 1, __FILE__, __LINE__, $e);
         }
 
@@ -231,7 +235,8 @@ finalize:
             if ($body)
                 $tStream->addStream(new StreamBridgeFromPsr($body));
 
-            $expr = $tStream->rewind();
+            $expr = $tStream;
+
         } elseif ($expr instanceof StreamInterface)
             $expr = new StreamBridgeFromPsr($expr);
 

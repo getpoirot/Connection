@@ -82,6 +82,38 @@ namespace Poirot\Connection\Http
     }
 
     /**
+     * Parse Status Line From Request
+     *
+     * @param string $httpMessage
+     *
+     * @return array['version'=>string, 'status'=>int, 'reason'=>string, 'headers'=>array(key=>val)]
+     */
+    function parseStatusLine($httpMessage)
+    {
+        if (!preg_match_all('/.*[\r\n]?/', $httpMessage, $lines))
+            throw new \InvalidArgumentException('Error Parsing Request Message.');
+
+        $lines = $lines[0];
+
+        $firstLine = array_shift($lines);
+
+        $regex   = '/^HTTP\/(?P<version>1\.[01]) (?P<status>\d{3})(?:[ ]+(?P<reason>.*))?$/';
+        $matches = array();
+        if (!preg_match($regex, $firstLine, $matches))
+            throw new \InvalidArgumentException(
+                'A valid response status line was not found in the provided string.'
+                . ' response:'
+                . $httpMessage
+            );
+
+        return [
+            'version' => $matches['version'],
+            'status'  => (int) $matches['status'],
+            'reason'  => $matches['reason'],
+        ];
+    }
+
+    /**
      * Parse Request Message Expresssion
      *
      * @param string $request
