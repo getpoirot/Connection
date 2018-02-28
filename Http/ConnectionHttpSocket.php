@@ -186,7 +186,11 @@ class ConnectionHttpSocket
             # ! # read data but remain origin chunked data
             $delim = "\r\n";
             do {
-                $chunkSize = $stream->readLine($delim);
+                if ( null === $chunkSize = $stream->readLine($delim) )
+                    // Read Error Connection Lost
+                    break;
+
+
                 ## ! remain chunked
                 $Buffer->write($chunkSize.$delim);
 
