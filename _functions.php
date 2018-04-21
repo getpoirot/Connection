@@ -4,6 +4,7 @@ namespace Poirot\Connection\Http
     use Poirot\Stream\Interfaces\iStreamable;
     use Poirot\Stream\Streamable\STemporary;
 
+
     /**
      * Parse Header line
      *
@@ -13,20 +14,43 @@ namespace Poirot\Connection\Http
      */
     function parseHeaderLines($headers)
     {
-        if (!preg_match_all('/.*[\n]?/', $headers, $lines))
+        if (! preg_match_all('/.*[\n]?/', $headers, $lines) )
             throw new \InvalidArgumentException('Error Parsing Request Message.');
 
         $lines = $lines[0];
 
         $headers = array();
-        foreach ($lines as $line) {
-            if (preg_match('/^(?P<label>[^()><@,;:\"\\/\[\]?=}{ \t]+):(?P<value>.*)$/', $line, $matches))
-                $headers[$matches['label']] = trim($matches['value']);
-        }
+        foreach ($lines as $line)
+            $headers += splitLabelValue($line);
+
 
         return $headers;
     }
-    
+
+    /**
+     * Parse Header line
+     *
+     * - name MUST be composed of printable US-ASCII characters (i.e.,
+     *   characters that have values between 33 and 126, inclusive),
+     *   except colon.
+     *
+     * @param string $line
+     *
+     * @return array['label' => 'value_line']
+     */
+    function splitLabelValue($line)
+    {
+        if (! preg_match('/^(?P<label>[^()><@,;:\"\\/\[\]?=}{ \t]+):(?P<value>.*)$/', $line, $matches) )
+            if ($matches === false || !isset($matches['label']) || !isset($matches['value']) )
+                throw new \InvalidArgumentException(sprintf(
+                    'Invalid Header (%s).'
+                    , $line
+                ));
+
+        return array( $matches['label'] => trim($matches['value'], "\r\n") );
+    }
+
+
     /**
      * Parse Response Headers
      *
@@ -36,7 +60,7 @@ namespace Poirot\Connection\Http
      */
     function parseResponseHeaders($httpMessage)
     {
-        if (!preg_match_all('/.*[\r\n]?/', $httpMessage, $lines))
+        if (! preg_match_all('/.*[\r\n]?/', $httpMessage, $lines) )
             throw new \InvalidArgumentException('Error Parsing Request Message.');
 
         $lines = $lines[0];
@@ -90,7 +114,7 @@ namespace Poirot\Connection\Http
      */
     function parseStatusLine($httpMessage)
     {
-        if (!preg_match_all('/.*[\r\n]?/', $httpMessage, $lines))
+        if (! preg_match_all('/.*[\r\n]?/', $httpMessage, $lines) )
             throw new \InvalidArgumentException('Error Parsing Request Message.');
 
         $lines = $lines[0];
@@ -99,7 +123,7 @@ namespace Poirot\Connection\Http
 
         $regex   = '/^HTTP\/(?P<version>1\.[01]) (?P<status>\d{3})(?:[ ]+(?P<reason>.*))?$/';
         $matches = array();
-        if (!preg_match($regex, $firstLine, $matches))
+        if (! preg_match($regex, $firstLine, $matches) )
             throw new \InvalidArgumentException(
                 'A valid response status line was not found in the provided string.'
                 . ' response:'
@@ -122,7 +146,7 @@ namespace Poirot\Connection\Http
      */
     function parseRequest($request)
     {
-        if (!preg_match_all('/.*[\n]?/', $request, $lines))
+        if (! preg_match_all('/.*[\n]?/', $request, $lines) )
             throw new \InvalidArgumentException('Error Parsing Request Message.');
 
         $lines = $lines[0];
@@ -132,7 +156,7 @@ namespace Poirot\Connection\Http
         $matches = null;
         $methods = '\w+';
         $regex     = '#^(?P<method>' . $methods . ')\s(?P<uri>[^ ]*)(?:\sHTTP\/(?P<version>\d+\.\d+)){0,1}#';
-        if (!preg_match($regex, $firstLine, $matches))
+        if (! preg_match($regex, $firstLine, $matches) )
             throw new \InvalidArgumentException(
                 'A valid request line was not found in the provided message.'
             );
@@ -175,14 +199,14 @@ namespace Poirot\Connection\Http
      */
     function readAndSkipHeaders($message)
     {
-        if (!$message instanceof iStreamable) {
+        if (! $message instanceof iStreamable ) {
             $message = (string) $message;
             $message = new STemporary($message);
         }
         
         $stream = $message;
-        if ($stream->getCurrOffset() > 0 ) {
-            if (!$stream->resource()->isSeekable())
+        if ( $stream->getCurrOffset() > 0 ) {
+            if (! $stream->resource()->isSeekable() )
                 throw new \Exception(sprintf(
                     'Reading Headers Must Start From Begining Of Request Stream Or Stream Been Seekable; current offset is: (%s).'
                     , $stream->getCurrOffset()
@@ -193,7 +217,7 @@ namespace Poirot\Connection\Http
 
         $headers = '';
         ## 255 can be vary, its each header length.
-        while(!$stream->isEOF() && ($line = $stream->readLine("\r\n")) !== null ) {
+        while(! $stream->isEOF() && ($line = $stream->readLine("\r\n")) !== null ) {
             $break = false;
             $headers .= $line."\r\n";
             if (trim($line) === '')
