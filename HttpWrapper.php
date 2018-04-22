@@ -11,6 +11,7 @@ use Poirot\Http\HttpMessage\Request\StreamBodyMultiPart;
 use Poirot\Http\HttpRequest;
 use Poirot\Http\Psr\RequestBridgeInPsr;
 use Poirot\Psr7\HttpResponse;
+use Poirot\Psr7\Stream;
 use Poirot\Psr7\UploadedFile;
 use Poirot\Std\Traits\tConfigurableSetter;
 use Poirot\Std\Type\StdArray;
@@ -58,6 +59,11 @@ class HttpWrapper
     function post($url, array $data = [], array $headers = [])
     {
         return $this->send('POST', $url, $data, $headers);
+    }
+
+    function delete($url, array $data = [], array $headers = [])
+    {
+        return $this->send('DELETE', $url, $data, $headers);
     }
 
     function send($method, $url, array $data = [], array $headers = [])
@@ -121,7 +127,7 @@ class HttpWrapper
 
         $chHeaders = [];
         foreach ($this->_normalizeHeaders($headers) as $k => $v)
-            $chHeaders[] = $k.': '.$v[0];
+            $chHeaders[] = $k.': '.$v;
         curl_setopt($ch, CURLOPT_HTTPHEADER, $chHeaders);
 
 
@@ -207,12 +213,12 @@ class HttpWrapper
     {
         $normHeaders = [];
         foreach ($headers as $label => $value) {
-            $label = str_replace(' ', '-', ucwords(str_replace('-', ' ', strtolower($label))));
             if ( is_int($label) ) {
                 $normHeaders += \Poirot\Connection\Http\splitLabelValue($value);
                 continue;
             }
 
+            $label = str_replace(' ', '-', ucwords(str_replace('-', ' ', strtolower($label))));
             $normHeaders[$label] = $value;
         }
 
@@ -247,7 +253,11 @@ class HttpWrapper
         }
 
 
-        $response = new HttpResponse($body, curl_getinfo($ch, CURLINFO_HTTP_CODE), $headers);
+        $stream = new Stream('php://memory', 'w+');
+        $stream->write($body);
+        $stream->rewind();
+
+        $response = new HttpResponse($stream, curl_getinfo($ch, CURLINFO_HTTP_CODE), $headers);
         return $response;
     }
 
@@ -401,7 +411,11 @@ class HttpWrapper
         $body = $res->read();
 
 
-        $response = new HttpResponse($body, $status, $headers['headers']);
+        $stream = new Stream('php://memory', 'w+');
+        $stream->write($body);
+        $stream->rewind();
+
+        $response = new HttpResponse($stream, $status, $headers['headers']);
         return $response;
     }
 }
