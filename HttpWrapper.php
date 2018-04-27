@@ -148,7 +148,7 @@ class HttpWrapper
 
             return $ret;
 
-        }, $this->maxTries);
+        }, $this->maxTries, 1000);
 
 
         $httpResponse = $this->_buildFinalResponseFromResource($ret, $ch);
