@@ -123,7 +123,7 @@ class HttpWrapper
         ## Request Options
         #
         curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $this->followRedirects);
 
         $chHeaders = [];
         foreach ($this->_normalizeHeaders($headers) as $k => $v)
