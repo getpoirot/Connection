@@ -18,6 +18,7 @@ use Poirot\Std\Type\StdArray;
 use Poirot\Stream\Streamable\STemporary;
 
 
+// TODO Json Wrapper; To send application/json included data request
 class HttpWrapper
 {
     use tConfigurableSetter;
